@@ -1,0 +1,362 @@
+// C++ code
+//
+#define LED_BAD 6
+#define LED_GOOD 5
+#include <Wire.h>
+#include <avr/wdt.h>
+
+#include <LiquidCrystal_I2C.h>
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+#define VOLTAGE A0
+int statki[4]={2,2,3,4};//kuter x2, lodz bojowa, lotniskowiec
+int wiersze[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+char kolumny[10] = {'A', 'B', 'C', 'D', 'E','F', 'G', 'H', 'I', 'J'}; 
+int i;
+int ik;
+int iw;
+int barka;
+int it;
+int losKol;
+int losWier;
+int losKier;
+int statek;
+int is1;
+int is2;
+int kotwica=0;
+int w=0;
+int punkty=0;
+int punktyMaszyna=0;
+int k=0;
+char wspolrzedne[11][4];//2+2+3+4
+char strzelone[100][4];
+bool koniec=false;
+char bufor[4];//moze byc 10 litera i usty znak 
+int sensorValue = 0;
+int los;
+bool staret=true;
+bool zapis=false;
+bool zmiena_czy_dalej=true;
+bool kolejka=true;
+void setup()
+{
+  randomSeed(analogRead(1)); //pusty pin to szum bedzie przeimnineinay w zairno https://docs.arduino.cc/language-reference/en/functions/random-numbers/random/
+ lcd.init();
+  lcd.clear();         
+  lcd.backlight();
+  losujplansze();
+  Serial.begin(9600);
+  delay(1000);
+}
+  void losujplansze(){
+    lcd.clear();
+     lcd.setCursor(6, 0);
+         
+  		lcd.print("Statki");
+    lcd.setCursor(4,1);
+    lcd.print("Wyplywaja...");
+	/// najdluzszy lotniskowoec 4 kratki
+	/// bojowy 3
+    /// kuetr rybacki 2 kratki 
+    for( i=0;i<4;i++){
+      barka=statki[i];
+        zapis=false;
+        while(zapis==false){
+      losKol=random(10);
+losWier=random(10);
+          zmiena_czy_dalej=true;
+   
+   //w poziom 0
+//w pion 1
+    losKier=random(2);
+    //  Serial.print(", losKier: ");
+//  Serial.println(losKier);      
+     if(losKier==0){
+       if(losKol+barka<=10){
+         //taki iffor czy nie sa zajete
+         for(it=0;it<barka;it++){
+         sprintf(bufor, "%d%c",  wiersze[losWier], kolumny[losKol+it]);
+         for(is1=0;is1<kotwica;is1++){
+          	if (strcmp(bufor,wspolrzedne[is1])==0){//https://cpp0x.pl/dokumentacja/standard-C/strcmp/320
+            	zmiena_czy_dalej=false;
+            }//iftest
+            }//for test
+         }//for test1
+         //taki iffor czy nie sa zajete
+         if(zmiena_czy_dalej==true){
+         for(ik=0;ik<barka;ik++){
+     	sprintf(wspolrzedne[kotwica], "%d%c", wiersze[losWier], kolumny[losKol+ik]); 
+           kotwica++;
+           //  Serial.print(" kotwica ");  
+  			//	Serial.print(kotwica);  
+             zapis=true;
+         }//petal barki
+       }//if kolumny 
+       }//if czy dalej
+       }//if kierunku
+	  else if(losKier==1){
+       if(losWier+barka<=10){
+                  //taki if czy nie sa zajete
+         for(it=0;it<barka;it++){
+         sprintf(bufor, "%d%c",  wiersze[losWier+it], kolumny[losKol]);
+         for(ik=0;ik<kotwica;ik++){
+          	if (strcmp(bufor,wspolrzedne[ik])==0){//https://cpp0x.pl/dokumentacja/standard-C/strcmp/320
+            	zmiena_czy_dalej=false;
+            }//iftest
+            }//for test
+         }//for test1
+         //taki if czy nie sa zajete
+         if(zmiena_czy_dalej==true){
+         
+         
+           for(is2=0;is2<barka;is2++){
+     	sprintf(wspolrzedne[kotwica], "%d%c", wiersze[losWier+is2], kolumny[losKol]); 
+           kotwica++;
+         //    Serial.print(" kotwica ");  
+  		//		Serial.print(kotwica);  
+             zapis=true;
+         }//petal barki
+          }//if wiersza
+           }//if czy dalej
+      }//if kierunku
+      }//wihle
+      }//petla
+      
+      
+}
+void printVolts(int val) {  
+  float voltage = val * (5.0 / 1023.0);
+  Serial.print(" ADC value: ");  
+  Serial.print(val);  
+  Serial.print(", volts: ");
+  Serial.println(voltage);  
+}
+void test(){
+  Serial.print(", wspolrzedne: ");
+ for(i=0;i<11;i++){
+    
+//sprintf(wiersze[i], "%c", kolumny[i]);
+   Serial.println(wspolrzedne[i]);
+    } 
+}
+void przyciski(){
+  delay(10);
+  if(analogRead(VOLTAGE)==0){
+  // Serial.println("Lewo");
+    
+  	k=k-1;
+      if(k<0){k=9;}
+    while(analogRead(VOLTAGE) == 0); 
+    delay(20);
+}
+  else if(analogRead(VOLTAGE)==205){
+  //  Serial.println("Prawo");
+   	k=k+1;
+      if(k>9){k=0;}
+    while(analogRead(VOLTAGE) == 205); 
+    delay(20);
+  }
+   else if(analogRead(VOLTAGE)==410){
+  //  Serial.println("Góra");
+     
+      w=w-1;
+     if(w<0){w=9;}
+     while(analogRead(VOLTAGE) == 410); 
+    delay(20);
+  }
+   else if(analogRead(VOLTAGE)==614){
+  //  Serial.println("Dół");
+     w=w+1;
+     if(w>9){w=0;}
+       while(analogRead(VOLTAGE) == 614); 
+    delay(20);
+  }
+
+   else if(analogRead(VOLTAGE)==818){
+     delay(20);
+   // Serial.println("ENTER");
+	  sprawdz();
+      while(analogRead(VOLTAGE) == 818);
+    delay(20);
+  }
+}
+void sprawdz(){
+  	kolejka=false;
+  	for( i=0;i<11;i++){
+    	if (strcmp(bufor,wspolrzedne[i])==0){//https://cpp0x.pl/dokumentacja/standard-C/strcmp/320
+    	//Serial.println("TRAFIŁEŚ!!!!");
+        lcd.setCursor(1, 0);
+         lcd.clear();
+  		lcd.print("TRAFILES!!!!");
+            digitalWrite(LED_GOOD,HIGH);
+
+        strcpy(wspolrzedne[i], "X"); //https://cpp0x.pl/dokumentacja/standard-C/strcpy/430
+		punkty++;
+          if(punkty==11){koniec=true;}
+        return;
+  			}
+
+  	}
+      //Serial.println("PUDŁO");
+		lcd.setCursor(1, 0);
+  lcd.clear();
+  		lcd.print("PUDLO!!!!");
+  digitalWrite(LED_BAD,HIGH);
+  
+}
+void wyswietl(){
+ sprintf(bufor, "%d%c",  wiersze[w], kolumny[k]); 
+ Serial.println(bufor);
+  lcd.clear();
+  lcd.setCursor(1, 0);
+  lcd.print("CELUJESZ : ");
+  lcd.setCursor(12, 0);
+  lcd.print(bufor);
+  digitalWrite(LED_GOOD,LOW);
+  digitalWrite(LED_BAD,LOW);
+ 
+}
+void terminator(){
+   lcd.clear();
+ lcd.setCursor(0, 0);
+ lcd.print("Komputer");
+ lcd.setCursor(3,1);
+ lcd.print("Celuje..."); 
+  zmiena_czy_dalej=true;
+while(zmiena_czy_dalej==true){
+losKol=random(10);
+losWier=random(10);//recykling
+  is1=1;
+ sprintf(bufor, "%d%c",  wiersze[losKol], kolumny[losWier]); 
+  	for( i=0;i<kotwica;i++){
+    	if (strcmp(bufor,strzelone[i])==0){//https://cpp0x.pl/dokumentacja/standard-C/strcmp/320
+		is1=0;
+        break;       
+        } ///ifbreak
+    }//for
+  if (is1==1){
+    
+    sprintf(strzelone[kotwica], "%d%c", wiersze[losWier], kolumny[losKol]); 
+    kotwica++;
+    zmiena_czy_dalej=false;
+  }//ifwpisowy
+  }//while
+ lcd.clear();
+ lcd.setCursor(0, 0);
+ lcd.print("Strzal w");
+  lcd.setCursor(4, 1);
+ lcd.print(bufor);
+  delay(100);
+}//Terminator Funkcja
+
+void czytrafilterminator(){
+
+  lcd.clear();
+  while(kolejka==false){
+ lcd.setCursor(0, 0);
+ lcd.print("Trafil?");
+  lcd.setCursor(0, 1);
+ lcd.print(bufor);
+   lcd.setCursor(8, 0);
+ lcd.print("NIE-Dol");
+  lcd.setCursor(6, 1);
+ lcd.print("TAK-Gora");
+
+    
+    if(analogRead(VOLTAGE)==614){
+    //Serial.println("dol");
+      kolejka=true;
+     }//if
+   else if(analogRead(VOLTAGE)==410){
+  //  Serial.println("Góra");
+     punktyMaszyna+=1;
+      if(punktyMaszyna==11){koniec=true;}
+     kolejka=true;
+
+  }
+  
+  
+  }//while kolejka
+/////
+ 	
+  /////
+
+
+
+
+  
+}
+
+void restartowa(){
+  
+if(analogRead(VOLTAGE)==818){
+    delay(20); 
+    lcd.clear();
+    lcd.setCursor(1, 0);
+  	lcd.print("RESTART");
+ kotwica = 0;
+  w = 0;
+  k = 0;
+  punkty = 0;
+  punktyMaszyna = 0;
+  kolejka = true;
+  koniec = false;
+  staret = true;
+  zapis = false;
+  zmiena_czy_dalej = true;
+
+
+  for (int i = 0; i < 100; i++) {
+    strcpy(strzelone[i], ""); 
+  }//for od srtzalow
+
+
+  losujplansze();
+  lcd.clear();
+  digitalWrite(LED_GOOD, LOW);
+  digitalWrite(LED_BAD, LOW);
+}}
+
+void loop()
+{if(staret==true){
+// losujplansze();
+  test();
+  staret=false;
+}////To mozna usunac ale do srpawdzenia jest lepsze bo wipisuje nam wspolrzedne
+  if (koniec==false){
+ 
+
+    if (kolejka==true){
+    przyciski();
+  wyswietl();
+    }
+     else if(kolejka==false){
+  terminator();
+       czytrafilterminator();
+     }
+   
+ 
+
+ delay(100);  
+ 
+  }
+  else if(koniec==true){
+      digitalWrite(LED_BAD,HIGH);
+    digitalWrite(LED_GOOD,HIGH);
+    lcd.clear();
+    lcd.setCursor(1, 0);
+    if (punktyMaszyna==11){
+lcd.print("Przegrana");
+    }
+    else if (punktyMaszyna!=11){
+      lcd.print("Wygrana !!!");
+    }//if komunkat
+  	
+    lcd.setCursor(1, 1);
+    lcd.print("ENTER <-Restart");
+	restartowa();
+
+    //Serial.println("WYGRAŁEŚ KONIEC GRY");
+
+  }
+}
